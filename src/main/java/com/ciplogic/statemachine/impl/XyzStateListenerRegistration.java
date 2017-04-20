@@ -1,4 +1,6 @@
-package com.ciplogic.statemachine;
+package com.ciplogic.statemachine.impl;
+
+import com.ciplogic.statemachine.XyzState;
 
 import java.util.Map;
 import java.util.Set;

@@ -1,6 +1,11 @@
 package com.ciplogic.statemachine;
 
 
+import com.ciplogic.statemachine.impl.XyzStateChangeEvent;
+import com.ciplogic.statemachine.impl.XyzStateListenerRegistration;
+import com.ciplogic.statemachine.impl.XyzStateListeners;
+import com.ciplogic.statemachine.impl.XyzStateListenersSnapshot;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -41,7 +46,7 @@ public class XyzStateMachine {
     public XyzState transition(XyzState targetState) {
         // the state machine was not initialized yet.
         if (currentState == null && targetState != this.initialState) {
-            return transition(this.initialState);
+            transition(this.initialState);
         }
 
         if (targetState == null) {
@@ -50,7 +55,7 @@ public class XyzStateMachine {
 
         // don't fire a new event, since this might change
         synchronized (this) {
-            if (!transitionSet.contains(currentState.ordinal() << 14 | targetState.ordinal())) {
+            if (currentState != null && !transitionSet.contains(currentState.ordinal() << 14 | targetState.ordinal())) {
                 throw new IllegalArgumentException(String.format(
                         "No transition exists between %s -> %s.",
                         currentState.name(),

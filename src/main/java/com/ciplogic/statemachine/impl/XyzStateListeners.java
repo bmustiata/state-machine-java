@@ -1,4 +1,6 @@
-package com.ciplogic.statemachine;
+package com.ciplogic.statemachine.impl;
+
+import com.ciplogic.statemachine.XyzState;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,9 +74,9 @@ public class XyzStateListeners<T> {
             readWriteLock.readLock().lock();
 
             Set<Consumer<T>> beforeLeaveCallbacks = beforeLeave.get(event.getPreviousState());
-            Set<Consumer<T>> beforeEnterCallbacks = beforeEnter.get(event.getNewState());
+            Set<Consumer<T>> beforeEnterCallbacks = beforeEnter.get(event.getTargetState());
             Set<Consumer<T>> afterLeaveCallbacks = afterLeave.get(event.getPreviousState());
-            Set<Consumer<T>> afterEnterCallbacks = afterEnter.get(event.getNewState());
+            Set<Consumer<T>> afterEnterCallbacks = afterEnter.get(event.getTargetState());
 
             return new XyzStateListenersSnapshot<T>(
                     beforeLeaveCallbacks == null ? Collections.emptyList() : new ArrayList<>(beforeLeaveCallbacks),

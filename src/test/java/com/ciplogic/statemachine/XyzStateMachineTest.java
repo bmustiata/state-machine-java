@@ -1,5 +1,6 @@
 package com.ciplogic.statemachine;
 
+import com.ciplogic.statemachine.impl.XyzStateChangeEvent;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -109,6 +110,8 @@ public class XyzStateMachineTest {
             stateMachine.transition(XyzState.RUNNING);
             stateMachine.transition(XyzState.DEFAULT);
         }
+
+        assertEquals(100_000_000, expected[0]);
     }
 
     @Test
@@ -121,7 +124,7 @@ public class XyzStateMachineTest {
         });
 
         stateMachine.beforeLeave(XyzState.DEFAULT, (ev) -> {
-            expected[0] += 3;
+            expected[0] += 2;
         });
 
         assertEquals(0, expected[0]);

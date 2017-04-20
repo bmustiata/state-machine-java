@@ -1,4 +1,6 @@
-package com.ciplogic.statemachine;
+package com.ciplogic.statemachine.impl;
+
+import com.ciplogic.statemachine.XyzState;
 
 /**
  * Defines a transition.

@@ -1,4 +1,4 @@
-package com.ciplogic.statemachine;
+package com.ciplogic.statemachine.impl;
 
 import java.util.List;
 import java.util.function.Consumer;
