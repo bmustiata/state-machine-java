@@ -8,7 +8,9 @@ import java.util.function.Consumer;
 public class XyzStateMachine {
     private Set<Integer> transitionSet = new HashSet<>();
 
+    private final XyzState initialState;
     private volatile XyzState currentState;
+
     private XyzStateListeners<XyzStateChangeEvent> listeners = new XyzStateListeners<>();
 
     public XyzStateMachine() {
@@ -16,15 +18,32 @@ public class XyzStateMachine {
     }
 
     public XyzStateMachine(XyzState initialState) {
-        this.currentState = initialState;
+        if (initialState == null) {
+            throw new IllegalArgumentException("Can not start state machine. Initial state is null.");
+        }
 
         // Transitions are serialized here.
         this.transitionSet.add(XyzState.DEFAULT.ordinal() << 14 | XyzState.RUNNING.ordinal());
         this.transitionSet.add(XyzState.RUNNING.ordinal() << 14 | XyzState.DEFAULT.ordinal());
         this.transitionSet.add(XyzState.RUNNING.ordinal() << 14 | XyzState.STOPPED.ordinal());
+
+        // initial transition
+        this.initialState = initialState;
     }
 
-    public void transition(XyzState targetState) {
+    /**
+     * Attempts to transition the state machine into the new state.
+     * In case the state cannot be changed, the old state will be returned.
+     * @param targetState
+     * @return The current state where the machine was transitioned,
+     * or the old value, in case the state machine could not be transitioned.
+     */
+    public XyzState transition(XyzState targetState) {
+        // the state machine was not initialized yet.
+        if (currentState == null && targetState != this.initialState) {
+            return transition(this.initialState);
+        }
+
         if (targetState == null) {
             throw new NullPointerException("targetState is null. Can not transition.");
         }
@@ -46,12 +65,14 @@ public class XyzStateMachine {
             stateChangeEvent = listenersCopy.notifyTransition(stateChangeEvent);
 
             if (stateChangeEvent.isCancelled()) {
-                return;
+                return currentState; // state not changed.
             }
 
             this.currentState = targetState;
 
             listenersCopy.notifyTransitionDone(stateChangeEvent);
+
+            return this.currentState;
         }
     }
 
