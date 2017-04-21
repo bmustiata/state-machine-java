@@ -39,7 +39,11 @@ public class XyzStateMachine {
     /**
      * Attempts to transition the state machine into the new state.
      * In case the state cannot be changed, the old state will be returned.
-     * @param targetState
+     *
+     * A transition must exist from the current state to the target state. If
+     * no such transition exists, the current state will be returned.
+     *
+     * @param targetState The desired state we want the state machine to transition.
      * @return The current state where the machine was transitioned,
      * or the old value, in case the state machine could not be transitioned.
      */
@@ -55,12 +59,15 @@ public class XyzStateMachine {
 
         // don't fire a new event, since this might change
         synchronized (this) {
-            if (currentState != null && !transitionSet.contains(currentState.ordinal() << 14 | targetState.ordinal())) {
-                throw new IllegalArgumentException(String.format(
+            if (currentState != null && // if the currentState == null, we're initializing
+                !transitionSet.contains(currentState.ordinal() << 14 | targetState.ordinal())) {
+                System.err.println(String.format(
                         "No transition exists between %s -> %s.",
                         currentState.name(),
                         targetState.name()
                 ));
+
+                return currentState;
             }
 
             XyzStateChangeEvent stateChangeEvent = new XyzStateChangeEvent(currentState, targetState);
@@ -82,6 +89,10 @@ public class XyzStateMachine {
     }
 
     public XyzState getState() {
+        if (this.currentState == null) {
+            transition(this.initialState);
+        }
+
         return this.currentState;
     }
 
