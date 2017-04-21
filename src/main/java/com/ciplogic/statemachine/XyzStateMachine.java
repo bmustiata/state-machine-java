@@ -27,10 +27,11 @@ public class XyzStateMachine {
             throw new IllegalArgumentException("Can not start state machine. Initial state is null.");
         }
 
-        // Transitions are serialized here.
+        // BEGIN_TRANSITIONS: this.transitionSet.add(XyzState.FROM_STATE.ordinal() << 14 | XyzState.TO_STATE.ordinal());
         this.transitionSet.add(XyzState.DEFAULT.ordinal() << 14 | XyzState.RUNNING.ordinal());
         this.transitionSet.add(XyzState.RUNNING.ordinal() << 14 | XyzState.DEFAULT.ordinal());
         this.transitionSet.add(XyzState.RUNNING.ordinal() << 14 | XyzState.STOPPED.ordinal());
+        // END_TRANSITIONS
 
         // initial transition
         this.initialState = initialState;
