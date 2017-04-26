@@ -195,4 +195,29 @@ public class XyzStateMachineTest {
         stateMachine.transition(XyzState.RUNNING);
         assertEquals(XyzState.STOPPED, stateMachine.getState());
     }
+
+    @Test
+    public void testDataRouting() {
+        XyzStateMachine stateMachine = new XyzStateMachine(XyzState.DEFAULT);
+
+        StringBuilder data = new StringBuilder();
+
+        stateMachine.<String>onData(XyzState.DEFAULT, (name) -> {
+             data.append("DEFAULT:").append(name).append(",");
+        });
+        stateMachine.<String>onData(XyzState.RUNNING, (name) -> {
+            data.append("RUNNING:").append(name).append(",");
+
+            return XyzState.STOPPED;
+        });
+
+        stateMachine.sendData("default");
+        stateMachine.sendData("default");
+        stateMachine.transition(XyzState.RUNNING);
+        stateMachine.sendData("running");
+        stateMachine.sendData("running");
+
+        assertEquals(XyzState.STOPPED, stateMachine.getState());
+        assertEquals("DEFAULT:default,DEFAULT:default,RUNNING:running,", data.toString());
+    }
 }

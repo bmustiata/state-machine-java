@@ -1,6 +1,9 @@
 package com.ciplogic.statemachine;
 
 
+import com.ciplogic.statemachine.impl.XyzDataListenerRegistration;
+import com.ciplogic.statemachine.impl.XyzDataListeners;
+import com.ciplogic.statemachine.impl.XyzDataListenersSnapshot;
 import com.ciplogic.statemachine.impl.XyzStateChangeEvent;
 import com.ciplogic.statemachine.impl.XyzStateException;
 import com.ciplogic.statemachine.impl.XyzStateListenerRegistration;
@@ -10,6 +13,7 @@ import com.ciplogic.statemachine.impl.XyzStateListenersSnapshot;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class XyzStateMachine {
     private Set<Integer> transitionSet = new HashSet<>();
@@ -20,6 +24,7 @@ public class XyzStateMachine {
     private volatile XyzStateChangeEvent currentChangeEvent;
 
     private XyzStateListeners<XyzStateChangeEvent> listeners = new XyzStateListeners<>();
+    private XyzDataListeners dataListeners = new XyzDataListeners();
 
     public XyzStateMachine() {
         this(XyzState.values()[0]);
@@ -75,10 +80,12 @@ public class XyzStateMachine {
      */
     public XyzState transition(XyzState targetState, Object data) {
         // the state machine was not initialized yet.
-        if (currentState == null && targetState != this.initialState) {
-            transition(this.initialState, data);
-        }
+        ensureInitialized();
 
+        return transitionImpl(targetState, data);
+    }
+
+    private XyzState transitionImpl(XyzState targetState, Object data) {
         if (targetState == null) {
             throw new NullPointerException("targetState is null. Can not transition.");
         }
@@ -130,9 +137,7 @@ public class XyzStateMachine {
     }
 
     public XyzState getState() {
-        if (this.currentState == null) {
-            transition(this.initialState);
-        }
+        ensureInitialized();
 
         return this.currentState;
     }
@@ -155,5 +160,33 @@ public class XyzStateMachine {
     public XyzStateListenerRegistration<XyzStateChangeEvent> beforeLeave(XyzState state,
                                                                          Consumer<XyzStateChangeEvent> callback) {
         return listeners.beforeLeave(state, callback);
+    }
+
+    public <T> XyzDataListenerRegistration<T> onData(XyzState state, Consumer<T> callback) {
+        return dataListeners.onData(state, callback);
+    }
+
+    public <T> XyzDataListenerRegistration<T> onData(XyzState state, Function<T, XyzState> callback) {
+        return dataListeners.onData(state, callback);
+    }
+
+
+    public <T> XyzState sendData(T data) {
+        ensureInitialized();
+
+        XyzDataListenersSnapshot listeners = dataListeners.copy(currentState);
+        XyzState newState = listeners.notifyData(data);
+
+        if (newState != null) {
+            return transition(newState);
+        }
+
+        return currentState;
+    }
+
+    private void ensureInitialized() {
+        if (this.currentState == null) {
+            transitionImpl(this.initialState, null);
+        }
     }
 }
