@@ -131,4 +131,18 @@ public class XyzStateMachineTest {
         stateMachine.transition(XyzState.RUNNING);
         assertEquals(3, expected[0]);
     }
+
+    @Test
+    public void dataGetsPassedIntoTheEvent() {
+        XyzStateMachine stateMachine = new XyzStateMachine(XyzState.DEFAULT);
+        final long[] expected = {0};
+
+        stateMachine.beforeLeave(XyzState.DEFAULT, (ev) -> {
+            expected[0] += 1 + (Integer) ev.getData();
+        });
+
+        assertEquals(0, expected[0]);
+        stateMachine.transition(XyzState.RUNNING, 3);
+        assertEquals(4, expected[0]);
+    }
 }

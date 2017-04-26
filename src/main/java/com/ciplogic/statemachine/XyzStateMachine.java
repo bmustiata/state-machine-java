@@ -38,6 +38,8 @@ public class XyzStateMachine {
     }
 
     /**
+     * Transition with no data.
+     *
      * Attempts to transition the state machine into the new state.
      * In case the state cannot be changed, the old state will be returned.
      *
@@ -47,11 +49,30 @@ public class XyzStateMachine {
      * @param targetState The desired state we want the state machine to transition.
      * @return The current state where the machine was transitioned,
      * or the old value, in case the state machine could not be transitioned.
+
+     * @return
      */
     public XyzState transition(XyzState targetState) {
+        return this.transition(targetState, null);
+    }
+
+
+    /**
+     * Attempts to transition the state machine into the new state.
+     * In case the state cannot be changed, the old state will be returned.
+     *
+     * A transition must exist from the current state to the target state. If
+     * no such transition exists, the current state will be returned.
+     *
+     * @param targetState The desired state we want the state machine to transition.
+     * @param data The data to pass into the change state event.
+     * @return The current state where the machine was transitioned,
+     * or the old value, in case the state machine could not be transitioned.
+     */
+    public XyzState transition(XyzState targetState, Object data) {
         // the state machine was not initialized yet.
         if (currentState == null && targetState != this.initialState) {
-            transition(this.initialState);
+            transition(this.initialState, data);
         }
 
         if (targetState == null) {
@@ -71,7 +92,7 @@ public class XyzStateMachine {
                 return currentState;
             }
 
-            XyzStateChangeEvent stateChangeEvent = new XyzStateChangeEvent(currentState, targetState);
+            XyzStateChangeEvent stateChangeEvent = new XyzStateChangeEvent(currentState, targetState, data);
 
             XyzStateListenersSnapshot<XyzStateChangeEvent> listenersCopy = listeners.copy(stateChangeEvent);
 
