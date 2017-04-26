@@ -19,7 +19,7 @@ public class XyzStateListenerRegistration<T> {
         this.callback = callback;
     }
 
-    void detach() {
+    public void detach() {
         stateListeners.removeListener(callbackCollection, callback);
     }
 }

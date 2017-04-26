@@ -110,9 +110,9 @@ public class XyzStateMachine {
             XyzStateChangeEvent stateChangeEvent = new XyzStateChangeEvent(currentState, targetState, data);
             currentChangeEvent = stateChangeEvent;
 
-            XyzStateListenersSnapshot<XyzStateChangeEvent> listenersCopy = listeners.copy(stateChangeEvent);
+            XyzStateListenersSnapshot<XyzStateChangeEvent> beforeListenersCopy = listeners.copyBefore(stateChangeEvent);
 
-            stateChangeEvent = listenersCopy.notifyTransition(stateChangeEvent);
+            stateChangeEvent = beforeListenersCopy.notifyTransition(stateChangeEvent);
 
             if (stateChangeEvent.isCancelled()) {
                 return currentState; // state not changed.
@@ -122,7 +122,8 @@ public class XyzStateMachine {
 
             this.currentChangeEvent = null;
 
-            listenersCopy.notifyTransitionDone(stateChangeEvent);
+            XyzStateListenersSnapshot<XyzStateChangeEvent> afterListenersCopy = listeners.copyAfter(stateChangeEvent);
+            afterListenersCopy.notifyTransition(stateChangeEvent);
 
             return this.currentState;
         }

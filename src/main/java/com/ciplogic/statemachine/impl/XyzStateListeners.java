@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 public class XyzStateListeners<T> {
     private Map<XyzState, Set<Consumer<T>>> beforeEnter = new HashMap<>();
     private Map<XyzState, Set<Consumer<T>>> afterEnter = new HashMap<>();
+
     private Map<XyzState, Set<Consumer<T>>> beforeLeave = new HashMap<>();
     private Map<XyzState, Set<Consumer<T>>> afterLeave = new HashMap<>();
 
@@ -69,18 +70,22 @@ public class XyzStateListeners<T> {
         }
     }
 
-    public XyzStateListenersSnapshot<T> copy(XyzStateChangeEvent event) {
+    public XyzStateListenersSnapshot<T> copyBefore(XyzStateChangeEvent event) {
+        return copyEventListeners(event, beforeLeave, beforeEnter);
+    }
+
+    public XyzStateListenersSnapshot<T> copyAfter(XyzStateChangeEvent event) {
+        return copyEventListeners(event, afterLeave, afterEnter);
+    }
+
+    private XyzStateListenersSnapshot<T> copyEventListeners(XyzStateChangeEvent event, Map<XyzState, Set<Consumer<T>>> leaveListeners, Map<XyzState, Set<Consumer<T>>> enterListeners) {
         try {
             readWriteLock.readLock().lock();
 
-            Set<Consumer<T>> beforeLeaveCallbacks = beforeLeave.get(event.getPreviousState());
-            Set<Consumer<T>> beforeEnterCallbacks = beforeEnter.get(event.getTargetState());
-            Set<Consumer<T>> afterLeaveCallbacks = afterLeave.get(event.getPreviousState());
-            Set<Consumer<T>> afterEnterCallbacks = afterEnter.get(event.getTargetState());
+            Set<Consumer<T>> afterLeaveCallbacks = leaveListeners.get(event.getPreviousState());
+            Set<Consumer<T>> afterEnterCallbacks = enterListeners.get(event.getTargetState());
 
             return new XyzStateListenersSnapshot<T>(
-                    beforeLeaveCallbacks == null ? Collections.emptyList() : new ArrayList<>(beforeLeaveCallbacks),
-                    beforeEnterCallbacks == null ? Collections.emptyList() : new ArrayList<>(beforeEnterCallbacks),
                     afterLeaveCallbacks == null ? Collections.emptyList() : new ArrayList<>(afterLeaveCallbacks),
                     afterEnterCallbacks == null ? Collections.emptyList() : new ArrayList<>(afterEnterCallbacks)
             );

@@ -1,6 +1,7 @@
 package com.ciplogic.statemachine;
 
 import com.ciplogic.statemachine.impl.XyzStateChangeEvent;
+import com.ciplogic.statemachine.impl.XyzStateListenerRegistration;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -175,5 +176,23 @@ public class XyzStateMachineTest {
 
         assertEquals(XyzState.DEFAULT, stateMachine.getState());
         stateMachine.transition(XyzState.RUNNING);
+    }
+
+    @Test
+    public void changeWithADynamicRegistration() {
+        XyzStateMachine stateMachine = new XyzStateMachine(XyzState.DEFAULT);
+
+        stateMachine.beforeEnter(XyzState.RUNNING, (ev) -> {
+            XyzStateListenerRegistration<XyzStateChangeEvent>[] newRegistration = new XyzStateListenerRegistration[]{null};
+
+            newRegistration[0] = stateMachine.afterEnter(XyzState.RUNNING, (e) -> {
+                stateMachine.transition(XyzState.STOPPED);
+                newRegistration[0].detach();
+            });
+        });
+
+        assertEquals(XyzState.DEFAULT, stateMachine.getState());
+        stateMachine.transition(XyzState.RUNNING);
+        assertEquals(XyzState.STOPPED, stateMachine.getState());
     }
 }

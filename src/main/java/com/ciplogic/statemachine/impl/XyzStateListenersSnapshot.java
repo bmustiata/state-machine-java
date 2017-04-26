@@ -6,18 +6,12 @@ import java.util.function.Consumer;
 public class XyzStateListenersSnapshot<T> {
     private final List<Consumer<T>> beforeLeave;
     private final List<Consumer<T>> beforeEnter;
-    private final List<Consumer<T>> afterLeave;
-    private final List<Consumer<T>> afterEnter;
 
     public XyzStateListenersSnapshot(List<Consumer<T>> beforeLeave,
-                                     List<Consumer<T>> beforeEnter,
-                                     List<Consumer<T>> afterLeave,
-                                     List<Consumer<T>> afterEnter) {
+                                     List<Consumer<T>> beforeEnter) {
 
         this.beforeLeave = beforeLeave;
         this.beforeEnter = beforeEnter;
-        this.afterLeave = afterLeave;
-        this.afterEnter = afterEnter;
     }
 
     public T notifyTransition(T stateChangeEvent) {
@@ -30,16 +24,6 @@ public class XyzStateListenersSnapshot<T> {
         }
 
         return stateChangeEvent;
-    }
-
-    public void notifyTransitionDone(T stateChangeEvent) {
-        for (int i = 0; i < afterLeave.size(); i++) {
-            callCatchingErrors(stateChangeEvent, afterLeave.get(i));
-        }
-
-        for (int i = 0; i < afterEnter.size(); i++) {
-            callCatchingErrors(stateChangeEvent, afterEnter.get(i));
-        }
     }
 
     private void callCatchingErrors(T stateChangeEvent, Consumer<T> callback) {
