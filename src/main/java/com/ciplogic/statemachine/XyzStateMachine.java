@@ -2,6 +2,7 @@ package com.ciplogic.statemachine;
 
 
 import com.ciplogic.statemachine.impl.XyzStateChangeEvent;
+import com.ciplogic.statemachine.impl.XyzStateException;
 import com.ciplogic.statemachine.impl.XyzStateListenerRegistration;
 import com.ciplogic.statemachine.impl.XyzStateListeners;
 import com.ciplogic.statemachine.impl.XyzStateListenersSnapshot;
@@ -16,6 +17,8 @@ public class XyzStateMachine {
     private final XyzState initialState;
     private volatile XyzState currentState;
 
+    private volatile XyzStateChangeEvent currentChangeEvent;
+
     private XyzStateListeners<XyzStateChangeEvent> listeners = new XyzStateListeners<>();
 
     public XyzStateMachine() {
@@ -29,6 +32,7 @@ public class XyzStateMachine {
 
         // BEGIN_TRANSITIONS: this.transitionSet.add(XyzState.FROM_STATE.ordinal() << 14 | XyzState.TO_STATE.ordinal());
         this.transitionSet.add(XyzState.DEFAULT.ordinal() << 14 | XyzState.RUNNING.ordinal());
+        this.transitionSet.add(XyzState.DEFAULT.ordinal() << 14 | XyzState.STOPPED.ordinal());
         this.transitionSet.add(XyzState.RUNNING.ordinal() << 14 | XyzState.DEFAULT.ordinal());
         this.transitionSet.add(XyzState.RUNNING.ordinal() << 14 | XyzState.STOPPED.ordinal());
         // END_TRANSITIONS
@@ -92,7 +96,19 @@ public class XyzStateMachine {
                 return currentState;
             }
 
+            if (currentChangeEvent != null) {
+                throw new XyzStateException(String.format(
+                        "The XyzStateMachine is already in a transition (%s -> %s). " +
+                        "Transitioning the state machine (%s -> %s) in `before` events is not supported.",
+                        currentChangeEvent.getPreviousState(),
+                        currentChangeEvent.getTargetState(),
+                        currentState,
+                        targetState
+                ));
+            }
+
             XyzStateChangeEvent stateChangeEvent = new XyzStateChangeEvent(currentState, targetState, data);
+            currentChangeEvent = stateChangeEvent;
 
             XyzStateListenersSnapshot<XyzStateChangeEvent> listenersCopy = listeners.copy(stateChangeEvent);
 
@@ -103,6 +119,8 @@ public class XyzStateMachine {
             }
 
             this.currentState = targetState;
+
+            this.currentChangeEvent = null;
 
             listenersCopy.notifyTransitionDone(stateChangeEvent);
 

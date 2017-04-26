@@ -46,6 +46,10 @@ public class XyzStateListenersSnapshot<T> {
         try {
             callback.accept(stateChangeEvent);
         } catch (Exception e) {
+            if (e instanceof XyzStateException) {
+                throw e;
+            }
+
             System.err.printf("%s - %s\n", e, e.getMessage());
             e.printStackTrace(System.err);
         }

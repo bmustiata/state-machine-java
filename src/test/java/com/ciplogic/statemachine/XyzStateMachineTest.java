@@ -164,4 +164,16 @@ public class XyzStateMachineTest {
         assertEquals(XyzState.STOPPED, stateMachine.getState());
         assertEquals(1, expected[0]);
     }
+
+    @Test(expected = com.ciplogic.statemachine.impl.XyzStateException.class)
+    public void changingTheStateInAnBeforeListenerIsNotAllowed() {
+        XyzStateMachine stateMachine = new XyzStateMachine(XyzState.DEFAULT);
+
+        stateMachine.beforeEnter(XyzState.RUNNING, (ev) -> {
+            stateMachine.transition(XyzState.STOPPED);
+        });
+
+        assertEquals(XyzState.DEFAULT, stateMachine.getState());
+        stateMachine.transition(XyzState.RUNNING);
+    }
 }
