@@ -10,13 +10,16 @@ import com.ciplogic.statemachine.impl.XyzStateListenerRegistration;
 import com.ciplogic.statemachine.impl.XyzStateListeners;
 import com.ciplogic.statemachine.impl.XyzStateListenersSnapshot;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class XyzStateMachine {
     private Set<Integer> transitionSet = new HashSet<>();
+    private Map<Integer, Map<String, Integer>> linkMap = new HashMap<>();
 
     private final XyzState initialState;
     private volatile XyzState currentState;
@@ -42,8 +45,18 @@ public class XyzStateMachine {
         this.transitionSet.add(XyzState.RUNNING.ordinal() << 14 | XyzState.STOPPED.ordinal());
         // END_TRANSITIONS
 
+        // BEGIN_LINKS: this.transitionSet.add(XyzState.FROM_STATE.ordinal() << 14 | XyzState.TO_STATE.ordinal());
+        this.registerLink("run", XyzState.DEFAULT.ordinal(), XyzState.RUNNING.ordinal());
+        // END_LINKS
+
+
         // initial transition
         this.initialState = initialState;
+    }
+
+    private void registerLink(String connectionName, int fromState, int toState) {
+        this.linkMap.computeIfAbsent(fromState, x -> new HashMap<>())
+            .computeIfAbsent(connectionName, x -> toState);
     }
 
     /**
@@ -188,5 +201,25 @@ public class XyzStateMachine {
         if (this.currentState == null) {
             transitionImpl(this.initialState, null);
         }
+    }
+
+    public void follow(String linkName) {
+        this.follow(linkName, null);
+    }
+
+    public void follow(String linkName, Object data) {
+        Map<String, Integer> linkMap = this.linkMap.get(currentState.ordinal());
+
+        if (linkMap == null) {
+            return; // the state doesn't defines named transitions.
+        }
+
+        Integer targetStateIndex = linkMap.get(linkName);
+
+        if (targetStateIndex == null) {
+            return; // there is no link with that name.
+        }
+
+        transition(XyzState.values()[targetStateIndex], data);
     }
 }
