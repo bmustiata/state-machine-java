@@ -38,25 +38,27 @@ public class XyzStateMachine {
             throw new IllegalArgumentException("Can not start state machine. Initial state is null.");
         }
 
-        // BEGIN_TRANSITIONS: this.transitionSet.add(XyzState.FROM_STATE.ordinal() << 14 | XyzState.TO_STATE.ordinal());
-        this.transitionSet.add(XyzState.DEFAULT.ordinal() << 14 | XyzState.RUNNING.ordinal());
-        this.transitionSet.add(XyzState.DEFAULT.ordinal() << 14 | XyzState.STOPPED.ordinal());
-        this.transitionSet.add(XyzState.RUNNING.ordinal() << 14 | XyzState.DEFAULT.ordinal());
-        this.transitionSet.add(XyzState.RUNNING.ordinal() << 14 | XyzState.STOPPED.ordinal());
+        // BEGIN_TRANSITIONS: this.registerTransition(TRANSITION_NAME`null`, XyzState.FROM_STATE, XyzState.TO_STATE);
+        this.registerTransition("run", XyzState.DEFAULT, XyzState.RUNNING);
+        this.registerTransition(null, XyzState.DEFAULT, XyzState.STOPPED);
+        this.registerTransition(null, XyzState.RUNNING, XyzState.DEFAULT);
+        this.registerTransition(null, XyzState.RUNNING, XyzState.STOPPED);
         // END_TRANSITIONS
-
-        // BEGIN_LINKS: this.transitionSet.add(XyzState.FROM_STATE.ordinal() << 14 | XyzState.TO_STATE.ordinal());
-        this.registerTransition("run", XyzState.DEFAULT.ordinal(), XyzState.RUNNING.ordinal());
-        // END_LINKS
 
 
         // initial state
         this.initialState = initialState;
     }
 
-    private void registerTransition(String connectionName, int fromState, int toState) {
-        this.linkMap.computeIfAbsent(fromState, x -> new HashMap<>())
-            .computeIfAbsent(connectionName, x -> toState);
+    private void registerTransition(String connectionName, XyzState fromState, XyzState toState) {
+        this.transitionSet.add(fromState.ordinal() << 16 | toState.ordinal());
+
+        if (connectionName == null) {
+            return;
+        }
+
+        this.linkMap.computeIfAbsent(fromState.ordinal(), x -> new HashMap<>())
+            .computeIfAbsent(connectionName, x -> toState.ordinal());
     }
 
     /**
