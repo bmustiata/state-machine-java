@@ -35,10 +35,10 @@ public class XyzStateMachineTest {
             expected[0] += 4;
         });
 
-        stateMachine.transition(XyzState.RUNNING);
+        stateMachine.changeState(XyzState.RUNNING);
         assertEquals(3, expected[0]);
 
-        stateMachine.transition(XyzState.STOPPED);
+        stateMachine.changeState(XyzState.STOPPED);
         assertEquals(10, expected[0]);
     }
 
@@ -57,7 +57,7 @@ public class XyzStateMachineTest {
             throw new IllegalArgumentException("test error");
         });
 
-        stateMachine.transition(XyzState.RUNNING);
+        stateMachine.changeState(XyzState.RUNNING);
         assertEquals(1, expected[0]);
     }
 
@@ -78,7 +78,7 @@ public class XyzStateMachineTest {
         });
 
         assertEquals(XyzState.DEFAULT, stateMachine.getState());
-        stateMachine.transition(XyzState.RUNNING);
+        stateMachine.changeState(XyzState.RUNNING);
 
         assertEquals(XyzState.DEFAULT, stateMachine.getState());
         assertEquals(1, expected[0]);
@@ -108,8 +108,8 @@ public class XyzStateMachineTest {
         });
 
         for (int i = 0; i < 10_000_000; i++) {
-            stateMachine.transition(XyzState.RUNNING);
-            stateMachine.transition(XyzState.DEFAULT);
+            stateMachine.changeState(XyzState.RUNNING);
+            stateMachine.changeState(XyzState.DEFAULT);
         }
 
         assertEquals(100_000_000, expected[0]);
@@ -129,7 +129,7 @@ public class XyzStateMachineTest {
         });
 
         assertEquals(0, expected[0]);
-        stateMachine.transition(XyzState.RUNNING);
+        stateMachine.changeState(XyzState.RUNNING);
         assertEquals(3, expected[0]);
     }
 
@@ -143,7 +143,7 @@ public class XyzStateMachineTest {
         });
 
         assertEquals(0, expected[0]);
-        stateMachine.transition(XyzState.RUNNING, 3);
+        stateMachine.changeState(XyzState.RUNNING, 3);
         assertEquals(4, expected[0]);
     }
 
@@ -153,7 +153,7 @@ public class XyzStateMachineTest {
         final long[] expected = {0};
 
         stateMachine.afterEnter(XyzState.RUNNING, (ev) -> {
-            stateMachine.transition(XyzState.STOPPED);
+            stateMachine.changeState(XyzState.STOPPED);
         });
 
         stateMachine.afterEnter(XyzState.RUNNING, (ev) -> {
@@ -161,7 +161,7 @@ public class XyzStateMachineTest {
         });
 
         assertEquals(XyzState.DEFAULT, stateMachine.getState());
-        stateMachine.transition(XyzState.RUNNING);
+        stateMachine.changeState(XyzState.RUNNING);
         assertEquals(XyzState.STOPPED, stateMachine.getState());
         assertEquals(1, expected[0]);
     }
@@ -171,11 +171,11 @@ public class XyzStateMachineTest {
         XyzStateMachine stateMachine = new XyzStateMachine(XyzState.DEFAULT);
 
         stateMachine.beforeEnter(XyzState.RUNNING, (ev) -> {
-            stateMachine.transition(XyzState.STOPPED);
+            stateMachine.changeState(XyzState.STOPPED);
         });
 
         assertEquals(XyzState.DEFAULT, stateMachine.getState());
-        stateMachine.transition(XyzState.RUNNING);
+        stateMachine.changeState(XyzState.RUNNING);
     }
 
     @Test
@@ -186,13 +186,13 @@ public class XyzStateMachineTest {
             XyzStateListenerRegistration<XyzStateChangeEvent>[] newRegistration = new XyzStateListenerRegistration[]{null};
 
             newRegistration[0] = stateMachine.afterEnter(XyzState.RUNNING, (e) -> {
-                stateMachine.transition(XyzState.STOPPED);
+                stateMachine.changeState(XyzState.STOPPED);
                 newRegistration[0].detach();
             });
         });
 
         assertEquals(XyzState.DEFAULT, stateMachine.getState());
-        stateMachine.transition(XyzState.RUNNING);
+        stateMachine.changeState(XyzState.RUNNING);
         assertEquals(XyzState.STOPPED, stateMachine.getState());
     }
 
@@ -213,8 +213,8 @@ public class XyzStateMachineTest {
 
         stateMachine.sendData("default");
         stateMachine.sendData("default");
-        stateMachine.transition(XyzState.RUNNING);
-        stateMachine.follow("running");
+        stateMachine.changeState(XyzState.RUNNING);
+        stateMachine.transition("running");
         stateMachine.sendData("running");
         stateMachine.sendData("running");
 

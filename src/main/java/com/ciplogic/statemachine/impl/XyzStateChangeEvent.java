@@ -36,7 +36,7 @@ public class XyzStateChangeEvent<T> {
     }
 
     /**
-     * Associated transition data.
+     * Associated changeState data.
      * @return
      */
     public <T> T getData() {

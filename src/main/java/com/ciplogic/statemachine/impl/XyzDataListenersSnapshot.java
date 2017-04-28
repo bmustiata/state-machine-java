@@ -30,7 +30,7 @@ public class XyzDataListenersSnapshot<T> {
 
             if (result != newResult) {
                 throw new XyzStateException(String.format(
-                        "Data listeners return both: %s and %s for the state machine to transition.",
+                        "Data listeners return both: %s and %s for the state machine to change state.",
                         newResult,
                         result));
             }

@@ -3,7 +3,7 @@ package com.ciplogic.statemachine.impl;
 import com.ciplogic.statemachine.XyzState;
 
 /**
- * Defines a transition.
+ * Defines a transition from a state to another.
  */
 public class XyzTransition {
     private XyzState startState;

@@ -46,15 +46,15 @@ public class XyzStateMachine {
         // END_TRANSITIONS
 
         // BEGIN_LINKS: this.transitionSet.add(XyzState.FROM_STATE.ordinal() << 14 | XyzState.TO_STATE.ordinal());
-        this.registerLink("run", XyzState.DEFAULT.ordinal(), XyzState.RUNNING.ordinal());
+        this.registerTransition("run", XyzState.DEFAULT.ordinal(), XyzState.RUNNING.ordinal());
         // END_LINKS
 
 
-        // initial transition
+        // initial state
         this.initialState = initialState;
     }
 
-    private void registerLink(String connectionName, int fromState, int toState) {
+    private void registerTransition(String connectionName, int fromState, int toState) {
         this.linkMap.computeIfAbsent(fromState, x -> new HashMap<>())
             .computeIfAbsent(connectionName, x -> toState);
     }
@@ -74,8 +74,8 @@ public class XyzStateMachine {
 
      * @return
      */
-    public XyzState transition(XyzState targetState) {
-        return this.transition(targetState, null);
+    public XyzState changeState(XyzState targetState) {
+        return this.changeState(targetState, null);
     }
 
 
@@ -91,16 +91,16 @@ public class XyzStateMachine {
      * @return The current state where the machine was transitioned,
      * or the old value, in case the state machine could not be transitioned.
      */
-    public XyzState transition(XyzState targetState, Object data) {
+    public XyzState changeState(XyzState targetState, Object data) {
         // the state machine was not initialized yet.
         ensureInitialized();
 
-        return transitionImpl(targetState, data);
+        return changeStateImpl(targetState, data);
     }
 
-    private XyzState transitionImpl(XyzState targetState, Object data) {
+    private XyzState changeStateImpl(XyzState targetState, Object data) {
         if (targetState == null) {
-            throw new NullPointerException("targetState is null. Can not transition.");
+            throw new NullPointerException("targetState is null. Can not changeState.");
         }
 
         // don't fire a new event, since this might change
@@ -118,7 +118,7 @@ public class XyzStateMachine {
 
             if (currentChangeEvent != null) {
                 throw new XyzStateException(String.format(
-                        "The XyzStateMachine is already in a transition (%s -> %s). " +
+                        "The XyzStateMachine is already in a changeState (%s -> %s). " +
                         "Transitioning the state machine (%s -> %s) in `before` events is not supported.",
                         currentChangeEvent.getPreviousState(),
                         currentChangeEvent.getTargetState(),
@@ -191,7 +191,7 @@ public class XyzStateMachine {
         XyzState newState = listeners.notifyData(data);
 
         if (newState != null) {
-            return transition(newState);
+            return changeState(newState);
         }
 
         return currentState;
@@ -199,15 +199,15 @@ public class XyzStateMachine {
 
     private void ensureInitialized() {
         if (this.currentState == null) {
-            transitionImpl(this.initialState, null);
+            changeStateImpl(this.initialState, null);
         }
     }
 
-    public void follow(String linkName) {
-        this.follow(linkName, null);
+    public void transition(String linkName) {
+        this.transition(linkName, null);
     }
 
-    public void follow(String linkName, Object data) {
+    public void transition(String linkName, Object data) {
         Map<String, Integer> linkMap = this.linkMap.get(currentState.ordinal());
 
         if (linkMap == null) {
@@ -220,6 +220,6 @@ public class XyzStateMachine {
             return; // there is no link with that name.
         }
 
-        transition(XyzState.values()[targetStateIndex], data);
+        changeState(XyzState.values()[targetStateIndex], data);
     }
 }
