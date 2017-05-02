@@ -105,6 +105,12 @@ public class XyzStateMachine {
             throw new NullPointerException("targetState is null. Can not changeState.");
         }
 
+        // since the listeners are synchronized themselves, we can copy there before, so we don't do
+        // that in the lock.
+        XyzStateChangeEvent stateChangeEvent = new XyzStateChangeEvent(currentState, targetState, data);
+        XyzStateListenersSnapshot<XyzStateChangeEvent> beforeListenersCopy = listeners.copyBefore(stateChangeEvent);
+        XyzStateListenersSnapshot<XyzStateChangeEvent> afterListenersCopy = listeners.copyAfter(stateChangeEvent);
+
         // don't fire a new event, since this might change
         synchronized (this) {
             if (currentState != null && // if the currentState == null, we're initializing
@@ -129,11 +135,7 @@ public class XyzStateMachine {
                 ));
             }
 
-            XyzStateChangeEvent stateChangeEvent = new XyzStateChangeEvent(currentState, targetState, data);
             currentChangeEvent = stateChangeEvent;
-
-            XyzStateListenersSnapshot<XyzStateChangeEvent> beforeListenersCopy = listeners.copyBefore(stateChangeEvent);
-
             stateChangeEvent = beforeListenersCopy.notifyTransition(stateChangeEvent);
 
             if (stateChangeEvent.isCancelled()) {
@@ -141,10 +143,8 @@ public class XyzStateMachine {
             }
 
             this.currentState = targetState;
-
             this.currentChangeEvent = null;
 
-            XyzStateListenersSnapshot<XyzStateChangeEvent> afterListenersCopy = listeners.copyAfter(stateChangeEvent);
             afterListenersCopy.notifyTransition(stateChangeEvent);
 
             return this.currentState;
