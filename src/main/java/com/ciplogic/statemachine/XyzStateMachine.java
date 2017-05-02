@@ -38,7 +38,7 @@ public class XyzStateMachine {
             throw new IllegalArgumentException("Can not start state machine. Initial state is null.");
         }
 
-        // BEGIN_TRANSITIONS: this.registerTransition(TRANSITION_NAME`null`, XyzState.FROM_STATE, XyzState.TO_STATE);
+        // BEGIN_TRANSITIONS: this.registerTransition("TRANSITION_NAME", XyzState.FROM_STATE, XyzState.TO_STATE);
         this.registerTransition("run", XyzState.DEFAULT, XyzState.RUNNING);
         this.registerTransition(null, XyzState.DEFAULT, XyzState.STOPPED);
         this.registerTransition(null, XyzState.RUNNING, XyzState.DEFAULT);
@@ -51,7 +51,7 @@ public class XyzStateMachine {
     }
 
     private void registerTransition(String connectionName, XyzState fromState, XyzState toState) {
-        this.transitionSet.add(fromState.ordinal() << 16 | toState.ordinal());
+        this.transitionSet.add(fromState.ordinal() << 14 | toState.ordinal());
 
         if (connectionName == null) {
             return;
