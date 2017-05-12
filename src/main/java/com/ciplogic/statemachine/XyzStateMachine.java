@@ -50,6 +50,13 @@ public class XyzStateMachine {
         this.initialState = initialState;
     }
 
+    // BEGIN_TRANSITION_SET: public XyzState TRANSITION_NAME() { return this.transition("TRANSITION_NAME"); }
+    public XyzState run() { return this.transition("run"); }
+    // END_TRANSITION_SET
+    // BEGIN_TRANSITION_SET: public XyzState TRANSITION_NAME(Object data) { return this.transition("TRANSITION_NAME", data); }
+    public XyzState run(Object data) { return this.transition("run", data); }
+    // END_TRANSITION_SET
+
     private void registerTransition(String connectionName, XyzState fromState, XyzState toState) {
         this.transitionSet.add(fromState.ordinal() << 14 | toState.ordinal());
 
@@ -95,7 +102,7 @@ public class XyzStateMachine {
      */
     public XyzState changeState(XyzState targetState, Object data) {
         // the state machine was not initialized yet.
-        ensureInitialized();
+        ensureStateMachineInitialized();
 
         return changeStateImpl(targetState, data);
     }
@@ -152,7 +159,7 @@ public class XyzStateMachine {
     }
 
     public XyzState getState() {
-        ensureInitialized();
+        ensureStateMachineInitialized();
 
         return this.currentState;
     }
@@ -187,7 +194,7 @@ public class XyzStateMachine {
 
 
     public <T> XyzState sendData(T data) {
-        ensureInitialized();
+        ensureStateMachineInitialized();
 
         XyzDataListenersSnapshot listeners = dataListeners.copy(currentState);
         XyzState newState = listeners.notifyData(data);
@@ -199,29 +206,29 @@ public class XyzStateMachine {
         return currentState;
     }
 
-    private void ensureInitialized() {
+    private void ensureStateMachineInitialized() {
         if (this.currentState == null) {
             changeStateImpl(this.initialState, null);
         }
     }
 
-    public void transition(String linkName) {
-        this.transition(linkName, null);
+    public XyzState transition(String linkName) {
+        return this.transition(linkName, null);
     }
 
-    public void transition(String linkName, Object data) {
+    public XyzState transition(String linkName, Object data) {
         Map<String, Integer> linkMap = this.linkMap.get(currentState.ordinal());
 
         if (linkMap == null) {
-            return; // the state doesn't defines named transitions.
+            return null;
         }
 
         Integer targetStateIndex = linkMap.get(linkName);
 
         if (targetStateIndex == null) {
-            return; // there is no link with that name.
+            return null;
         }
 
-        changeState(XyzState.values()[targetStateIndex], data);
+        return changeState(XyzState.values()[targetStateIndex], data);
     }
 }

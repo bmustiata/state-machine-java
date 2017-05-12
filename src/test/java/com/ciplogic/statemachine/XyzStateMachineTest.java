@@ -214,7 +214,7 @@ public class XyzStateMachineTest {
         stateMachine.sendData("default");
         stateMachine.sendData("default");
         stateMachine.changeState(XyzState.RUNNING);
-        stateMachine.transition("running");
+        stateMachine.run();
         stateMachine.sendData("running");
         stateMachine.sendData("running");
 
