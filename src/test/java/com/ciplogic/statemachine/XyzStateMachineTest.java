@@ -106,12 +106,12 @@ public class XyzStateMachineTest {
             expected[0] += 4;
         });
 
-        for (int i = 0; i < 100_000_000; i++) {
+        for (int i = 0; i < 10_000_000; i++) {
             stateMachine.changeState(XyzState.RUNNING);
             stateMachine.changeState(XyzState.DEFAULT);
         }
 
-        assertEquals(1_000_000_000, expected[0]);
+        assertEquals(100_000_000, expected[0]);
     }
 
     @Test
