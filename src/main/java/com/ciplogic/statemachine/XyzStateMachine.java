@@ -217,6 +217,8 @@ public class XyzStateMachine {
     }
 
     public XyzState transition(String linkName, Object data) {
+        this.ensureStateMachineInitialized();
+
         Map<String, Integer> linkMap = this.linkMap.get(currentState.ordinal());
 
         if (linkMap == null) {

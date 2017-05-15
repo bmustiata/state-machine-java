@@ -1,7 +1,6 @@
 package com.ciplogic.statemachine;
 
 import com.ciplogic.statemachine.impl.XyzStateChangeEvent;
-import com.ciplogic.statemachine.impl.XyzStateListenerRegistration;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -179,24 +178,6 @@ public class XyzStateMachineTest {
     }
 
     @Test
-    public void changeWithADynamicRegistration() {
-        XyzStateMachine stateMachine = new XyzStateMachine(XyzState.DEFAULT);
-
-        stateMachine.beforeEnter(XyzState.RUNNING, (ev) -> {
-            XyzStateListenerRegistration<XyzStateChangeEvent>[] newRegistration = new XyzStateListenerRegistration[]{null};
-
-            newRegistration[0] = stateMachine.afterEnter(XyzState.RUNNING, (e) -> {
-                stateMachine.changeState(XyzState.STOPPED);
-                newRegistration[0].detach();
-            });
-        });
-
-        assertEquals(XyzState.DEFAULT, stateMachine.getState());
-        stateMachine.changeState(XyzState.RUNNING);
-        assertEquals(XyzState.STOPPED, stateMachine.getState());
-    }
-
-    @Test
     public void testDataRouting() {
         XyzStateMachine stateMachine = new XyzStateMachine(XyzState.DEFAULT);
 
@@ -220,5 +201,21 @@ public class XyzStateMachineTest {
 
         assertEquals(XyzState.STOPPED, stateMachine.getState());
         assertEquals("DEFAULT:default,DEFAULT:default,RUNNING:running,", data.toString());
+    }
+
+    @Test
+    public void testInvalidTransitionShouldNotWork() {
+        XyzStateMachine stateMachine = new XyzStateMachine(XyzState.STOPPED);
+        XyzState newState = stateMachine.changeState(XyzState.RUNNING);
+
+        assertEquals(XyzState.STOPPED, newState);
+    }
+
+    @Test
+    public void testInitializationOnTransitions() {
+        XyzStateMachine stateMachine = new XyzStateMachine(XyzState.DEFAULT);
+        stateMachine.transition("run");
+
+        assertEquals(XyzState.RUNNING, stateMachine.getState());
     }
 }
