@@ -29,6 +29,16 @@ public class XyzStateMachine {
     private XyzStateListeners<XyzStateChangeEvent> listeners = new XyzStateListeners<>();
     private XyzDataListeners dataListeners = new XyzDataListeners();
 
+    //BEGIN_HANDLEBARS
+    //{{#each properties}}
+    //{{#if this.default}}
+    //    private {{this.type}} {{@key}} = {{this.default}};
+    //{{else}}
+    //    private {{this}} {{@key}};
+    //{{/if}}
+    //{{/each}}
+    //END_HANDLEBARS
+
     static {
         // BEGIN_TRANSITIONS: XyzStateMachine.registerTransition("TRANSITION_NAME", XyzState.FROM_STATE, XyzState.TO_STATE);
         XyzStateMachine.registerTransition("run", XyzState.DEFAULT, XyzState.RUNNING);
@@ -234,4 +244,29 @@ public class XyzStateMachine {
 
         return changeState(XyzState.values()[targetStateIndex], data);
     }
+
+    // BEGIN_HANDLEBARS
+    //{{#each properties}}
+    //{{#if this.default}}
+    //    public void set{{capitalize @key}}({{this.type}} value) {
+    //        this.{{@key}} = value;
+    //    }
+    //
+    //    public {{this.type}} get{{capitalize @key}}() {
+    //        return this.{{@key}};
+    //    }
+    //
+    //{{else}}
+    //    public void set{{capitalize @key}}({{this}} value) {
+    //        this.{{@key}} = value;
+    //    }
+    //
+    //    public {{this}} get{{capitalize @key}}() {
+    //        return this.{{@key}};
+    //    }
+    //
+    //{{/if}}
+    //{{/each}}
+    // END_HANDLEBARS
+
 }
