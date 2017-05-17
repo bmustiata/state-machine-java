@@ -218,4 +218,28 @@ public class XyzStateMachineTest {
 
         assertEquals(XyzState.RUNNING, stateMachine.getState());
     }
+
+    @Test
+    public void testResendingData() {
+        XyzStateMachine stateMachine = new XyzStateMachine();
+        int[] totalSum = {0};
+
+        stateMachine.<Integer>onData(XyzState.DEFAULT, (data) -> {
+            stateMachine.sendData(XyzState.RUNNING, data + 2);
+        });
+
+        stateMachine.<Integer>onData(XyzState.RUNNING, (data) -> {
+            stateMachine.sendData(XyzState.STOPPED, data + 3);
+        });
+
+        stateMachine.<Integer>onData(XyzState.STOPPED, (data) -> {
+            totalSum[0] = data;
+        });
+
+        XyzState state = stateMachine.sendData(1);
+
+        assertEquals(XyzState.STOPPED, state);
+        assertEquals(6, totalSum[0]);
+        assertEquals(XyzState.STOPPED, stateMachine.getState());
+    }
 }
