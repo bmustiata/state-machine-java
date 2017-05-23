@@ -45,6 +45,7 @@ public class XyzStateMachine {
         XyzStateMachine.registerTransition(null, XyzState.DEFAULT, XyzState.STOPPED);
         XyzStateMachine.registerTransition(null, XyzState.RUNNING, XyzState.DEFAULT);
         XyzStateMachine.registerTransition(null, XyzState.RUNNING, XyzState.STOPPED);
+        XyzStateMachine.registerTransition(null, XyzState.RUNNING, XyzState.RUNNING);
         // END_TRANSITIONS
     }
 
@@ -131,6 +132,10 @@ public class XyzStateMachine {
 
         // don't fire a new event, since this might change
         synchronized (this) {
+            if (currentState == targetState) {
+                return currentState;
+            }
+
             if (currentState != null && // if the currentState == null, we're initializing
                 !transitionSet.contains(currentState.ordinal() << 14 | targetState.ordinal())) {
                 System.err.println(String.format(
@@ -193,6 +198,26 @@ public class XyzStateMachine {
     public XyzStateListenerRegistration<XyzStateChangeEvent> beforeLeave(XyzState state,
                                                                          Consumer<XyzStateChangeEvent> callback) {
         return listeners.beforeLeave(state, callback);
+    }
+
+    public XyzStateListenerRegistration<XyzStateChangeEvent> beforeEnter(XyzState state,
+                                                                         Runnable callback) {
+        return listeners.beforeEnter(state, (ev) -> callback.run());
+    }
+
+    public XyzStateListenerRegistration<XyzStateChangeEvent> afterEnter(XyzState state,
+                                                                        Runnable callback) {
+        return listeners.afterEnter(state, (ev) -> callback.run());
+    }
+
+    public XyzStateListenerRegistration<XyzStateChangeEvent> afterLeave(XyzState state,
+                                                                        Runnable callback) {
+        return listeners.afterLeave(state, (ev) -> callback.run());
+    }
+
+    public XyzStateListenerRegistration<XyzStateChangeEvent> beforeLeave(XyzState state,
+                                                                         Runnable callback) {
+        return listeners.beforeLeave(state, (ev) -> callback.run());
     }
 
     public <T> XyzDataListenerRegistration<T> onData(XyzState state, Consumer<T> callback) {

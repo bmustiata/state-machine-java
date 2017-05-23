@@ -4,6 +4,7 @@ import com.ciplogic.statemachine.impl.XyzStateChangeEvent;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class XyzStateMachineTest {
@@ -241,5 +242,18 @@ public class XyzStateMachineTest {
         assertEquals(XyzState.STOPPED, state);
         assertEquals(6, totalSum[0]);
         assertEquals(XyzState.STOPPED, stateMachine.getState());
+    }
+
+    @Test
+    public void testEnteringTheSameStateAgain() {
+        XyzStateMachine stateMachine = new XyzStateMachine(XyzState.RUNNING);
+        final boolean[] testFailed = {false};
+
+        stateMachine.afterLeave(XyzState.RUNNING, () -> {
+            testFailed[0] = true;
+        });
+
+        stateMachine.changeState(XyzState.RUNNING);
+        assertFalse(testFailed[0]);
     }
 }
