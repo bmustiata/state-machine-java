@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.function.Function;
 
 public class XyzDataListenersSnapshot<T> {
-    private final List<Function<T, XyzState>> dataListeners;
+    private final List<Function<XyzDataEvent<T>, XyzState>> dataListeners;
 
-    public XyzDataListenersSnapshot(List<Function<T, XyzState>> dataListeners) {
+    public XyzDataListenersSnapshot(List<Function<XyzDataEvent<T>, XyzState>> dataListeners) {
 
         this.dataListeners = dataListeners;
     }
@@ -16,8 +16,14 @@ public class XyzDataListenersSnapshot<T> {
     public XyzState notifyData(T data) {
         XyzState result = null;
 
+        XyzDataEvent<T> dataEvent = new XyzDataEvent<>(data);
+
         for (int i = 0; i < dataListeners.size(); i++) {
-            XyzState newResult = throwEventualErrors(data, dataListeners.get(i));
+            if (dataEvent.isConsumed()) {
+                break;
+            }
+
+            XyzState newResult = throwEventualErrors(dataEvent, dataListeners.get(i));
 
             if (newResult == null) {
                 continue;
@@ -39,7 +45,7 @@ public class XyzDataListenersSnapshot<T> {
         return result;
     }
 
-    private XyzState throwEventualErrors(T data, Function<T, XyzState> callback) {
+    private XyzState throwEventualErrors(XyzDataEvent<T> data, Function<XyzDataEvent<T>, XyzState> callback) {
         try {
             return callback.apply(data);
         } catch (Exception e) {

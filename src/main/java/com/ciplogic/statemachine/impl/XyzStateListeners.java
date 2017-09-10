@@ -46,19 +46,33 @@ public class XyzStateListeners<T> {
         try {
             readWriteLock.writeLock().lock();
 
-            Set<Consumer<T>> items = callbackCollection.get(state);
-
-            if (items == null) {
-                items = new LinkedHashSet<>();
-                callbackCollection.put(state, items);
+            if (state != null) {
+                return registerStateChangeListener(state, callback, callbackCollection);
             }
 
-            items.add(callback);
+            XyzCompositeStateListenerRegistration<T> result = new XyzCompositeStateListenerRegistration<>();
 
-            return new XyzStateListenerRegistration<T>(this, callbackCollection, callback);
+            for (XyzState state1: XyzState.values()) {
+                result.addListenerRegistration(registerStateChangeListener(state1, callback, callbackCollection));
+            }
+
+            return result;
         } finally {
             readWriteLock.writeLock().unlock();
         }
+    }
+
+    private XyzStateListenerRegistration<T> registerStateChangeListener(XyzState state, Consumer<T> callback, Map<XyzState, Set<Consumer<T>>> callbackCollection) {
+        Set<Consumer<T>> items = callbackCollection.get(state);
+
+        if (items == null) {
+			items = new LinkedHashSet<>();
+			callbackCollection.put(state, items);
+		}
+
+        items.add(callback);
+
+        return new XyzDefaultStateListenerRegistration<T>(this, callbackCollection, callback);
     }
 
     public void removeListener(Map<XyzState, Set<Consumer<T>>> callbackCollection, Consumer<T> callback) {

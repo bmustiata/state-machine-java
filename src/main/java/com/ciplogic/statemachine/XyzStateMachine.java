@@ -1,12 +1,13 @@
 package com.ciplogic.statemachine;
 
 
+import com.ciplogic.statemachine.impl.XyzStateListenerRegistration;
 import com.ciplogic.statemachine.impl.XyzDataListenerRegistration;
+import com.ciplogic.statemachine.impl.XyzDataEvent;
 import com.ciplogic.statemachine.impl.XyzDataListeners;
 import com.ciplogic.statemachine.impl.XyzDataListenersSnapshot;
 import com.ciplogic.statemachine.impl.XyzStateChangeEvent;
 import com.ciplogic.statemachine.impl.XyzStateException;
-import com.ciplogic.statemachine.impl.XyzStateListenerRegistration;
 import com.ciplogic.statemachine.impl.XyzStateListeners;
 import com.ciplogic.statemachine.impl.XyzStateListenersSnapshot;
 
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class XyzStateMachine {
     private static Set<Integer> transitionSet = new HashSet<>();
@@ -40,13 +42,16 @@ public class XyzStateMachine {
     //END_HANDLEBARS
 
     static {
-        // BEGIN_TRANSITIONS: XyzStateMachine.registerTransition("TRANSITION_NAME", XyzState.FROM_STATE, XyzState.TO_STATE);
+        //BEGIN_HANDLEBARS
+        //{{#each transitions}}
+        //        XyzStateMachine.registerTransition("{{name}}", XyzState.{{startState}}, XyzState.{{endState}});
+        //{{/each}}
         XyzStateMachine.registerTransition("run", XyzState.DEFAULT, XyzState.RUNNING);
         XyzStateMachine.registerTransition(null, XyzState.DEFAULT, XyzState.STOPPED);
         XyzStateMachine.registerTransition(null, XyzState.RUNNING, XyzState.DEFAULT);
         XyzStateMachine.registerTransition(null, XyzState.RUNNING, XyzState.STOPPED);
         XyzStateMachine.registerTransition(null, XyzState.RUNNING, XyzState.RUNNING);
-        // END_TRANSITIONS
+        //END_HANDLEBARS
     }
 
     public XyzStateMachine() {
@@ -62,12 +67,25 @@ public class XyzStateMachine {
         this.initialState = initialState;
     }
 
-    // BEGIN_TRANSITION_SET: public XyzState TRANSITION_NAME() { return this.transition("TRANSITION_NAME"); }
-    public XyzState run() { return this.transition("run"); }
-    // END_TRANSITION_SET
-    // BEGIN_TRANSITION_SET: public XyzState TRANSITION_NAME(Object data) { return this.transition("TRANSITION_NAME", data); }
-    public XyzState run(Object data) { return this.transition("run", data); }
-    // END_TRANSITION_SET
+    //BEGIN_HANDLEBARS
+    //{{#each transitionSet}}
+    //    public XyzState {{this}}() {
+    //        return this.transition("{{this}}");
+    //    }
+    //
+    //    public XyzState {{this}}(Object data) {
+    //        return this.transition("{{this}}", data);
+    //    }
+    //
+    //{{/each}}
+    public XyzState run() {
+        return this.transition("run");
+    }
+
+    public XyzState run(Object data) {
+        return this.transition("run", data);
+    }
+    //END_HANDLEBARS
 
     private static void registerTransition(String connectionName, XyzState fromState, XyzState toState) {
         transitionSet.add(fromState.ordinal() << 14 | toState.ordinal());
@@ -220,11 +238,104 @@ public class XyzStateMachine {
         return listeners.beforeLeave(state, (ev) -> callback.run());
     }
 
-    public <T> XyzDataListenerRegistration<T> onData(XyzState state, Consumer<T> callback) {
+    public <T> XyzDataListenerRegistration<T> onData(XyzState state,
+                                                     Class<? extends T> clazz,
+                                                     Consumer<XyzDataEvent<T>> callback) {
+        return this.onData(state, dataEvent -> {
+			if (dataEvent.getData() == null) {
+				return;
+			}
+
+			if (! clazz.isAssignableFrom(dataEvent.getData().getClass())) {
+				return;
+			}
+
+			callback.accept(dataEvent);
+		});
+    }
+
+    public <T> XyzDataListenerRegistration<T> onData(XyzState state,
+                                                     Class<? extends T> clazz,
+                                                     Runnable callback) {
+        return this.onData(state, dataEvent -> {
+            if (dataEvent.getData() == null) {
+                return;
+            }
+
+            if (! clazz.isAssignableFrom(dataEvent.getData().getClass())) {
+                return;
+            }
+
+            callback.run();
+        });
+    }
+
+    /**
+     * Process data only if the data is of the specified type.
+     * @param state
+     * @param clazz
+     * @param callback
+     * @param <T>
+     * @return
+     */
+    public <T> XyzDataListenerRegistration<T> onData(XyzState state,
+                                                     Class<? extends T> clazz,
+                                                     Function<XyzDataEvent<T>, XyzState> callback) {
+        return this.onData(state, dataEvent -> {
+			if (dataEvent.getData() == null) {
+				return null;
+			}
+
+			if (! clazz.isAssignableFrom(dataEvent.getData().getClass())) {
+				return null;
+			}
+
+			return callback.apply(dataEvent);
+		});
+    }
+
+    /**
+     * Process data only if the data is of the specified type.
+     * @param state
+     * @param clazz
+     * @param callback
+     * @param <T>
+     * @return
+     */
+    public <T> XyzDataListenerRegistration<T> onData(XyzState state,
+                                                     Class<? extends T> clazz,
+                                                     Supplier<XyzState> callback) {
+        return this.onData(state, dataEvent -> {
+            if (dataEvent.getData() == null) {
+                return null;
+            }
+
+            if (! clazz.isAssignableFrom(dataEvent.getData().getClass())) {
+                return null;
+            }
+
+            return callback.get();
+        });
+    }
+
+    public <T> XyzDataListenerRegistration<T> onData(XyzState state, Runnable callback) {
+        return this.onData(state, (data) -> {
+            callback.run();
+        });
+    }
+
+    public <T> XyzDataListenerRegistration<T> onData(XyzState state, Supplier<XyzState> callback) {
+        return this.onData(state, (data) -> {
+            return callback.get();
+        });
+    }
+
+
+    public <T> XyzDataListenerRegistration<T> onData(XyzState state, Consumer<XyzDataEvent<T>> callback) {
         return dataListeners.onData(state, callback);
     }
 
-    public <T> XyzDataListenerRegistration<T> onData(XyzState state, Function<T, XyzState> callback) {
+    public <T> XyzDataListenerRegistration<T> onData(XyzState state, Function<XyzDataEvent<T>, XyzState> callback) {
         return dataListeners.onData(state, callback);
     }
 

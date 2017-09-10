@@ -18,11 +18,11 @@ import java.util.function.Function;
  * the state machine.
  */
 public class XyzDataListeners<T> {
-    private Map<XyzState, Set<Function<T, XyzState>>> dataListeners = new HashMap<>();
+    private Map<XyzState, Set<Function<XyzDataEvent<T>, XyzState>>> dataListeners = new HashMap<>();
 
     private ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
-    public XyzDataListenerRegistration<T> onData(XyzState state, Consumer<T> callback) {
+    public XyzDataListenerRegistration<T> onData(XyzState state, Consumer<XyzDataEvent<T>> callback) {
         return onData(state, (e) -> {
             callback.accept(e);
 
@@ -30,30 +30,47 @@ public class XyzDataListeners<T> {
         });
     }
 
-    public XyzDataListenerRegistration<T> onData(XyzState state, Function<T, XyzState> callback) {
+    public XyzDataListenerRegistration<T> onData(XyzState state, Function<XyzDataEvent<T>, XyzState> callback) {
         return addListener(state, callback, dataListeners);
     }
 
-    private XyzDataListenerRegistration<T> addListener(XyzState state, Function<T, XyzState> callback, Map<XyzState, Set<Function<T, XyzState>>> callbackCollection) {
+    private XyzDataListenerRegistration<T> addListener(XyzState state,
+                                                       Function<XyzDataEvent<T>, XyzState> callback,
+                                                       Map<XyzState, Set<Function<XyzDataEvent<T>, XyzState>>> callbackCollection) {
         try {
             readWriteLock.writeLock().lock();
 
-            Set<Function<T, XyzState>> items = callbackCollection.get(state);
-
-            if (items == null) {
-                items = new LinkedHashSet<>();
-                callbackCollection.put(state, items);
+            if (state != null) {
+                return registerDataListener(state, callback, callbackCollection);
             }
 
-            items.add(callback);
+            XyzCompositeDataListenerRegistration<T> result = new XyzCompositeDataListenerRegistration<>();
 
-            return new XyzDataListenerRegistration<T>(this, callbackCollection, callback);
+            for (XyzState state1 : XyzState.values()) {
+                result.addListenerRegistration(registerDataListener(state1, callback, callbackCollection));
+            }
+
+            return result;
         } finally {
             readWriteLock.writeLock().unlock();
         }
     }
 
-    public void removeListener(Map<XyzState, Set<Function<T, XyzState>>> callbackCollection, Function<T, XyzState> callback) {
+    private XyzDataListenerRegistration<T> registerDataListener(XyzState state, Function<XyzDataEvent<T>, XyzState> callback, Map<XyzState, Set<Function<XyzDataEvent<T>, XyzState>>> callbackCollection) {
+        Set<Function<XyzDataEvent<T>, XyzState>> items = callbackCollection.get(state);
+
+        if (items == null) {
+			items = new LinkedHashSet<>();
+			callbackCollection.put(state, items);
+		}
+
+        items.add(callback);
+
+        return new XyzDefaultDataListenerRegistration<T>(this, callbackCollection, callback);
+    }
+
+    public void removeListener(Map<XyzState, Set<Function<XyzDataEvent<T>, XyzState>>> callbackCollection,
+                               Function<XyzDataEvent<T>, XyzState> callback) {
         try {
             readWriteLock.writeLock().lock();
             callbackCollection.remove(callback);
@@ -67,11 +84,11 @@ public class XyzDataListeners<T> {
     }
 
     private XyzDataListenersSnapshot<T> copyEventListeners(XyzState event,
-                                                            Map<XyzState, Set<Function<T, XyzState>>> dataListeners) {
+                                                           Map<XyzState, Set<Function<XyzDataEvent<T>, XyzState>>> dataListeners) {
         try {
             readWriteLock.readLock().lock();
 
-            Set<Function<T, XyzState>> dataListenerCallbacks = dataListeners.get(event);
+            Set<Function<XyzDataEvent<T>, XyzState>> dataListenerCallbacks = dataListeners.get(event);
 
             return new XyzDataListenersSnapshot<T>(
                     dataListenerCallbacks == null ? Collections.emptyList() : new ArrayList<>(dataListenerCallbacks)

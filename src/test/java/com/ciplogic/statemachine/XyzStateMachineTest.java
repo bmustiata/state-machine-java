@@ -1,7 +1,12 @@
 package com.ciplogic.statemachine;
 
+import com.ciplogic.statemachine.impl.XyzDataEvent;
 import com.ciplogic.statemachine.impl.XyzStateChangeEvent;
 import org.junit.Test;
+import org.omg.CORBA.INITIALIZE;
+
+import javax.print.attribute.standard.RequestingUserName;
+import java.awt.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -184,11 +189,11 @@ public class XyzStateMachineTest {
 
         StringBuilder data = new StringBuilder();
 
-        stateMachine.<String>onData(XyzState.DEFAULT, (name) -> {
-             data.append("DEFAULT:").append(name).append(",");
+        stateMachine.<String>onData(XyzState.DEFAULT, (dataEvent) -> {
+             data.append("DEFAULT:").append(dataEvent.getData()).append(",");
         });
-        stateMachine.<String>onData(XyzState.RUNNING, (name) -> {
-            data.append("RUNNING:").append(name).append(",");
+        stateMachine.<String>onData(XyzState.RUNNING, (dataEvent) -> {
+            data.append("RUNNING:").append(dataEvent.getData()).append(",");
 
             return XyzState.STOPPED;
         });
@@ -225,16 +230,16 @@ public class XyzStateMachineTest {
         XyzStateMachine stateMachine = new XyzStateMachine();
         int[] totalSum = {0};
 
-        stateMachine.<Integer>onData(XyzState.DEFAULT, (data) -> {
-            stateMachine.sendData(XyzState.RUNNING, data + 2);
+        stateMachine.<Integer>onData(XyzState.DEFAULT, (dataEvent) -> {
+            stateMachine.sendData(XyzState.RUNNING, dataEvent.getData() + 2);
         });
 
-        stateMachine.<Integer>onData(XyzState.RUNNING, (data) -> {
-            stateMachine.sendData(XyzState.STOPPED, data + 3);
+        stateMachine.<Integer>onData(XyzState.RUNNING, (dataEvent) -> {
+            stateMachine.sendData(XyzState.STOPPED, dataEvent.getData() + 3);
         });
 
-        stateMachine.<Integer>onData(XyzState.STOPPED, (data) -> {
-            totalSum[0] = data;
+        stateMachine.<Integer>onData(XyzState.STOPPED, (dataEvent) -> {
+            totalSum[0] = dataEvent.getData();
         });
 
         XyzState state = stateMachine.sendData(1);
@@ -255,5 +260,59 @@ public class XyzStateMachineTest {
 
         stateMachine.changeState(XyzState.RUNNING);
         assertFalse(testFailed[0]);
+    }
+
+    @Test
+    public void testListeningForAllTransitions() {
+        final int[] currentCount = { 0 };
+
+        XyzStateMachine stateMachine = new XyzStateMachine();
+        stateMachine.afterEnter(null, () -> currentCount[0]++);
+
+        stateMachine.transition("run");
+        assertEquals(2, currentCount[0]);
+        stateMachine.changeState(XyzState.STOPPED);
+        assertEquals(3, currentCount[0]);
+    }
+
+    @Test
+    public void testConsumingDataDoesNotCallTheNextListener() {
+        XyzStateMachine stateMachine = new XyzStateMachine();
+        final int[] currentCount = { 10 };
+
+        stateMachine.onData(XyzState.RUNNING, (XyzDataEvent<Integer> ev) -> { currentCount[0] += ev.getData(); ev.consume(); });
+        stateMachine.onData(null, (XyzDataEvent<Integer> ev) -> { currentCount[0] -= 1; });
+
+        stateMachine.sendData(1); // this should substract 1 since running is not matching, to consume the event.
+        assertEquals(9, currentCount[0]);
+        stateMachine.changeState(XyzState.RUNNING);
+
+        stateMachine.sendData(2); // this should add 2
+        assertEquals(11, currentCount[0]);
+        stateMachine.changeState(XyzState.STOPPED);
+
+        stateMachine.sendData(1); // this should substract 1 since running is not matching, to consume the event.
+        assertEquals(10, currentCount[0]);
+    }
+
+    @Test
+    public void testTypedDataGetsRoutedCorrectly() {
+        XyzStateMachine stateMachine = new XyzStateMachine(XyzState.RUNNING);
+        final int[] currentCount = { 0 };
+
+        stateMachine.onData(XyzState.RUNNING, Integer.class, (XyzDataEvent<Integer> ev) -> {
+            currentCount[0] += ev.getData();
+        });
+        stateMachine.onData(XyzState.RUNNING, (XyzDataEvent<Number> ev) -> {
+            currentCount[0] += ev.getData().intValue();
+        });
+
+        stateMachine.sendData(1L); // should be added by the Number listener only
+
+        assertEquals(1, currentCount[0]);
+
+        stateMachine.sendData(10);   // should be added by both listeners
+
+        assertEquals(21, currentCount[0]);
     }
 }
